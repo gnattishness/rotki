@@ -651,6 +651,9 @@ BITFINEX_EXCHANGE_TEST_ASSETS = (
     'TESTUSDTF0',
 )
 
+UNSUPPORTED_BTC_MARKETS_ASSETS = (
+# Empty for now
+        )
 
 POLONIEX_TO_WORLD = {v: k for k, v in WORLD_TO_POLONIEX.items()}
 BITTREX_TO_WORLD = {v: k for k, v in WORLD_TO_BITTREX.items()}
@@ -848,6 +851,22 @@ def asset_from_ftx(ftx_name: str) -> Asset:
 
     name = FTX_TO_WORLD.get(ftx_name, ftx_name)
     return symbol_to_asset_or_token(name)
+
+def asset_from_btc_markets(bm_name: str) -> Asset:
+    """May raise:
+    - DeserializationError
+    - UnsupportedAsset
+    - UnknownAsset
+    """
+    if not isinstance(bm_name, str):
+        raise DeserializationError(f'Got non-string type {type(bm_name)} for ftx asset')
+
+    if bm_name in UNSUPPORTED_BTC_MARKETS_ASSETS:
+        raise UnsupportedAsset(bm_name)
+
+    # TODO add translation here if needed
+
+    return symbol_to_asset_or_token(bm_name)
 
 
 def asset_from_kucoin(kucoin_name: str) -> Asset:

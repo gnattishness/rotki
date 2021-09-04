@@ -19,6 +19,7 @@ from rotkehlchen.exchanges.bitfinex import Bitfinex
 from rotkehlchen.exchanges.bitmex import Bitmex
 from rotkehlchen.exchanges.bitstamp import Bitstamp
 from rotkehlchen.exchanges.bittrex import Bittrex
+from rotkehlchen.exchanges.btcmarkets import BTCMarkets
 from rotkehlchen.exchanges.coinbase import Coinbase
 from rotkehlchen.exchanges.coinbasepro import Coinbasepro
 from rotkehlchen.exchanges.data_structures import AssetMovement
@@ -680,6 +681,20 @@ def create_test_independentreserve(
         database=database,
         msg_aggregator=msg_aggregator,
     )
+
+
+def create_test_btcmarkets(
+        database: DBHandler,
+        msg_aggregator: MessagesAggregator,
+) -> BTCMarkets:
+    return BTCMarkets(
+        name='independentreserve',
+        api_key=make_api_key(),
+        secret=make_api_secret(),
+        database=database,
+        msg_aggregator=msg_aggregator,
+    )
+
 
 
 def try_get_first_exchange(

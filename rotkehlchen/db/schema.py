@@ -82,6 +82,8 @@ INSERT OR IGNORE INTO location(location, seq) VALUES (']', 29);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('^', 30);
 /* Sushiswap */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('_', 31);
+/* BTC Markets */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('`', 32);
 """
 
 # Custom enum table for AssetMovement categories (deposit/withdrawal)

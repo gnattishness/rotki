@@ -350,6 +350,7 @@ class Location(DBEnumMixIn):
     INDEPENDENTRESERVE = 29
     GITCOIN = 30
     SUSHISWAP = 31
+    BTCMARKETS = 32
 
 
 class AssetMovementCategory(DBEnumMixIn):
