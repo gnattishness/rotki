@@ -24,6 +24,21 @@ def test_location():
     assert exchange.location == Location.BTCMARKETS
     assert exchange.name == 'btcmarkets1'
 
+# TODO delete
+def test_interactive_query_balances(
+        function_scope_btcmarkets,
+        inquirer,  # pylint: disable=unused-argument
+):
+    """Test all balances returned by BTC Markets are proccessed properly"""
+    exchange = function_scope_btcmarkets
+    key = os.environ["BM_API_KEY"]
+    secret = base64.b64decode(os.environ["BM_API_SECRET"])
+    exchange.edit_exchange_credentials(key, secret, None)
+    result = exchange.query_online_deposits_withdrawals(0, time.time())
+    assert False
+
+
+
 
 def test_assets_are_known():
     # TODO Why this over the fixture?

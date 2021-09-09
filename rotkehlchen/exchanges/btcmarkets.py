@@ -511,11 +511,11 @@ class BTCMarkets(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                 if isinstance(e, KeyError):
                     msg = f"Missing key entry for {msg}."
                 self.msg_aggregator.add_error(
-                    "Failed to deserialize an IndependentReserve deposit/withdrawal. "
+                    "Failed to deserialize a BTC Markets deposit/withdrawal. "
                     "Check logs for details. Ignoring it.",
                 )
                 log.error(
-                    "Error processing an IndependentReserve deposit/withdrawal.",
+                    "Error processing a BTC Markets deposit/withdrawal.",
                     raw_asset_movement=entry,
                     error=msg,
                 )
@@ -528,4 +528,5 @@ class BTCMarkets(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         start_ts: Timestamp,  # pylint: disable=unused-argument
         end_ts: Timestamp,  # pylint: disable=unused-argument
     ) -> List[MarginPosition]:
-        return []  # noop for independentreserve
+        return []  # noop for BTC Markets
+        # TODO is there any of this in BM?
