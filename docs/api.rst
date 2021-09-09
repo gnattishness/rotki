@@ -1102,7 +1102,7 @@ Query the historical price of assets
               "to_asset": "USD",
               "timestamp": 1611166335,
               "price": "1.20"
-            }, 
+            },
             {
               "from_asset": "_ceth_0xD533a949740bb3306d119CC777fa900bA034cd52",
               "to_asset": "USD",
@@ -6117,7 +6117,7 @@ Getting Liquity historical data
    :resjson int timestamp: The unix timestamp at which the event occured.
    :resjson string tx: The transaction hash of the event.
    :resjson object debt_after: Debt in the Trove after the operation
-   :resjson object collateral_after: Amount, asset and usd value of collateral at the Trove 
+   :resjson object collateral_after: Amount, asset and usd value of collateral at the Trove
    :resjson object debt_delta: Amount, asset and usd value of debt that the operation changed.
    :resjson object collateral_delta: Amount, asset and usd value of collateral that the operation changed.
    :resjson string trove_operation: The operation that happened in the change. Can be ``Open Trove``, ``Close Trove``, ``Adjust Trove``, ``Accrue Rewards``, ``Liquidation In Normal Mode``, ``Liquidation In Recovery Mode``, ``Redeem Collateral``
@@ -7945,7 +7945,7 @@ Adding manually tracked balances
    :reqjsonarr string label: A label to describe where is this balance stored. Must be unique between all manually tracked balance labels.
    :reqjsonarr string amount: The amount of asset that is stored.
    :reqjsonarr list[optional] tags: An optional list of tags to attach to the this manually tracked balance.
-   :reqjsonarr string location: The location where the balance is saved. Can be one of: ["external", "kraken", "poloniex", "bittrex", "binance", "bitmex", "coinbase", "banks", "blockchain", "coinbasepro", "gemini", "ftx", "independentreserve"]
+   :reqjsonarr string location: The location where the balance is saved. Can be one of: ["external", "kraken", "poloniex", "bittrex", "binance", "bitmex", "coinbase", "banks", "blockchain", "coinbasepro", "gemini", "ftx", "independentreserve", "btcmarkets"]
 
    **Example Response**:
 

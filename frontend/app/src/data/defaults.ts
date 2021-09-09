@@ -22,6 +22,7 @@ export const EXCHANGE_BITTREX = 'bittrex';
 export const EXCHANGE_BITMEX = 'bitmex';
 export const EXCHANGE_BITFINEX = 'bitfinex';
 export const EXCHANGE_BINANCE = 'binance';
+export const EXCHANGE_BTCMARKETS = 'btcmarkets';
 export const EXCHANGE_COINBASE = 'coinbase';
 export const EXCHANGE_COINBASEPRO = 'coinbasepro';
 export const EXCHANGE_GEMINI = 'gemini';
@@ -59,6 +60,7 @@ export const SUPPORTED_EXCHANGES = [
   EXCHANGE_BINANCE,
   EXCHANGE_BINANCEUS,
   EXCHANGE_BITCOIN_DE,
+  EXCHANGE_BTCMARKETS,
   EXCHANGE_COINBASE,
   EXCHANGE_COINBASEPRO,
   EXCHANGE_GEMINI,

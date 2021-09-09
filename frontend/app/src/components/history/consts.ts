@@ -9,6 +9,7 @@ import {
   EXCHANGE_BITSTAMP,
   EXCHANGE_BITTREX,
   EXCHANGE_BLOCKFI,
+  EXCHANGE_BTCMARKETS,
   EXCHANGE_COINBASE,
   EXCHANGE_COINBASEPRO,
   EXCHANGE_CRYPTOCOM,
@@ -185,6 +186,13 @@ export const tradeLocations: TradeLocationData[] = [
     identifier: EXCHANGE_INDEPENDENTRESERVE,
     name: 'IndependentReserve',
     icon: require('@/assets/images/exchanges/independentreserve.png'),
+    imageIcon: true,
+    exchange: true
+  },
+  {
+    identifier: EXCHANGE_BTCMARKETS,
+    name: 'BTCMarkets',
+    icon: require('@/assets/images/exchanges/btcmarkets.svg'),
     imageIcon: true,
     exchange: true
   },
