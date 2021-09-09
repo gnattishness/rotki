@@ -79,8 +79,9 @@ def _trade_from_btcmarkets(raw_trade: Dict) -> Trade:
     )
     rate = Price(FVal(raw_trade["price"]))
     fee_amount = deserialize_fee(raw_trade["fee"])
-    # TODO is that right, or is the fee in the quote asset?
-    fee_asset = base_asset
+    # TODO is the fee always in the quote asset?
+    # or in whatever asset you have? - e.g. for buy its the quote asset, sell it's the base asset? (e.g. for poloniex)
+    fee_asset = quote_asset
     return Trade(
         timestamp=timestamp,
         location=Location.BTCMARKETS,
@@ -149,7 +150,7 @@ def _sign_bm_message(secret: bytes, message: str) -> str:
 
     Uses hmac_sha512.
     """
-    # NOTE: CPython is faster if digest is a string supported by OpenSSL
+    # CPython is faster if digest is a string supported by OpenSSL
     # See https://docs.python.org/3.7/library/hmac.html#hmac.digest
     sig_bytes = hmac.digest(
         secret,
@@ -213,7 +214,7 @@ class Btcmarkets(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         api_secret: Optional[ApiSecret],
         passphrase: Optional[str],
     ) -> bool:
-        maybe_decoded_secret = api_secret or _decode_bm_secret(api_secret)
+        maybe_decoded_secret = api_secret and _decode_bm_secret(api_secret)
         changed = super().edit_exchange_credentials(api_key, maybe_decoded_secret, passphrase)
         if api_key is not None:
             self.session.headers.update({"BM-AUTH-APIKEY": api_key})
