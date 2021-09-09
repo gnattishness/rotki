@@ -178,7 +178,7 @@ def _decode_bm_secret(encoded_secret: ApiSecret) -> ApiSecret:
         )
     return decoded_secret
 
-class BTCMarkets(ExchangeInterface):  # lgtm[py/missing-call-to-init]
+class Btcmarkets(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     def __init__(
         self,
         name: str,

@@ -10,7 +10,7 @@ from rotkehlchen.constants.assets import A_AUD, A_ETC, A_ETH
 from rotkehlchen.errors import UnknownAsset
 from rotkehlchen.exchanges.data_structures import Location, Trade, TradeType
 from rotkehlchen.exchanges.btcmarkets import (
-    BTCMarkets,
+    Btcmarkets,
 )
 from rotkehlchen.assets.converters import asset_from_btc_markets
 from rotkehlchen.fval import FVal
@@ -20,7 +20,7 @@ import time
 
 
 def test_location():
-    exchange = BTCMarkets('btcmarkets1', 'a', b'a', object(), object())
+    exchange = Btcmarkets('btcmarkets1', 'a', b'a', object(), object())
     assert exchange.location == Location.BTCMARKETS
     assert exchange.name == 'btcmarkets1'
 
@@ -42,7 +42,7 @@ def test_interactive_query_balances(
 
 def test_assets_are_known():
     # TODO Why this over the fixture?
-    exchange = BTCMarkets('btcmarkets1', 'a', b'a', object(), object())
+    exchange = Btcmarkets('btcmarkets1', 'a', b'a', object(), object())
     data, raw_response = exchange._api_query('GET', 'assets')
     for entry in data:
         # if this raises a keyError, we have an unexpected/malformed response
