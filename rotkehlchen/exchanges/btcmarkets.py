@@ -1,14 +1,12 @@
 import base64
-import hashlib
 from http import HTTPStatus
 import hmac
 import itertools
 import json
 import logging  # lgtm [py/import-and-import-from]  # https://github.com/github/codeql/issues/6088
 import time
-from collections import OrderedDict
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 import gevent
 import requests
@@ -36,19 +34,15 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_asset_movement_category,
     deserialize_timestamp_from_date,
     deserialize_fee,
-    deserialize_int_from_str
+    deserialize_int_from_str,
 )
 from rotkehlchen.typing import (
     ApiKey,
     ApiSecret,
-    AssetAmount,
-    AssetMovementCategory,
-    Fee,
     Timestamp,
     TradeType,
 )
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import timestamp_to_iso8601
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -119,8 +113,8 @@ def _asset_movement_from_btcmarkets(raw_tx: Dict) -> Optional[AssetMovement]:
         transaction_id = raw_tx["paymentDetail"].get("txId")
         address = raw_tx["paymentDetail"].get("address")
     else:
-        transaction_id=None
-        address=None
+        transaction_id = None
+        address = None
 
     # NOTE: could also use "creationTime" field, but that's when the withdrawal may have started
     # which may be different to when it became "complete"
@@ -143,9 +137,9 @@ def _asset_movement_from_btcmarkets(raw_tx: Dict) -> Optional[AssetMovement]:
         timestamp=timestamp,
         asset=asset,
         amount=amount,
-        fee_asset=asset, # Fee is taken in the same asset
+        fee_asset=asset,  # Fee is taken in the same asset
         fee=fee,
-        link=raw_tx["id"]
+        link=raw_tx["id"],
     )
 
 
@@ -186,7 +180,7 @@ class BTCMarkets(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         self.api_version = "v3"
         self.msg_aggregator = msg_aggregator
         self.session.headers.update(
-            {"Content-Type": "application/json", "BM-AUTH-APIKEY": api_key}
+            {"Content-Type": "application/json", "BM-AUTH-APIKEY": api_key},
         )
 
     def first_connection(self) -> None:
@@ -371,12 +365,15 @@ class BTCMarkets(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         # TODO what should I do when this is called on an endpoint that doesn't support pagination?
         # - get single page and warn? or raise error
         # - either programmer error or the API changed
-        # TODO could also specify a persistent limit across queries (e.g. if we only want to get the first 205 values)
+        # TODO could also specify a persistent limit across queries
+        # (e.g. if we only want to get the first 205 values)
         # forward or back directions?
         # TODO "stop_when" callable? evaluated on each result?
         # when would you want to page forward?
         if page_size > MAX_LIMIT_PER_PAGE:
-            raise ValueError(f'Requested page_size {page_size} greater than MAX_LIMIT_PER_PAGE {MAX_LIMIT_PER_PAGE}')
+            raise ValueError(
+                f'Requested page_size {page_size} greater than MAX_LIMIT_PER_PAGE {MAX_LIMIT_PER_PAGE}'
+            )
         data_pages = []
         # TODO do both before & after get returned?
         # or is it always one or the other?
@@ -388,8 +385,8 @@ class BTCMarkets(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             if last_before is not None:
                 call_params["before"] = last_before
             ## I think this breaks, can't have both before and after
-            #if last_after is not None:
-            #    call_params["after"] = last_after
+            # if last_after is not None:
+            #     call_params["after"] = last_after
             # Nicer name for ret_data!!
             (ret_data, response) = self._api_query(
                 verb=verb,
@@ -466,7 +463,7 @@ class BTCMarkets(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         movements = []
         try:
             resp = self._gather_paginated_data(
-                    verb="GET",
+                verb="GET",
                 endpoint="transfers",
             )
         except KeyError as e:
