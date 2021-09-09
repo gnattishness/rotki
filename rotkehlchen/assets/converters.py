@@ -652,8 +652,8 @@ BITFINEX_EXCHANGE_TEST_ASSETS = (
 )
 
 UNSUPPORTED_BTC_MARKETS_ASSETS = (
-# Empty for now
-        )
+    # 'MCAU', # TODO meld.gold - shows up in balances, add as an asset? If we put it here, it raises errors
+)
 
 POLONIEX_TO_WORLD = {v: k for k, v in WORLD_TO_POLONIEX.items()}
 BITTREX_TO_WORLD = {v: k for k, v in WORLD_TO_BITTREX.items()}
