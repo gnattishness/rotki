@@ -1,4 +1,5 @@
 import base64
+import binascii
 from http import HTTPStatus
 import hmac
 import itertools
@@ -17,7 +18,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_btc_markets
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE, QUERY_RETRY_TIMES
-from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset
+from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, InputError
 from rotkehlchen.exchanges.data_structures import (
     AssetMovement,
     Location,
@@ -158,9 +159,26 @@ def _sign_bm_message(secret: bytes, message: str) -> str:
     b64_bytes = base64.b64encode(sig_bytes)
     return b64_bytes.decode("utf-8")
 
+def _decode_bm_secret(encoded_secret: ApiSecret) -> ApiSecret:
+    """Returns decoded secret.
+
+    Can raise InputError if .
+
+    :dev: The API Secret provided by BTC Markets is a base64-encoded string
+        that needs to be decoded for use.
+    """
+    secret_str = encoded_secret.decode()  # TODO this step might not be needed
+    try:
+        decoded_secret = ApiSecret(base64.b64decode(secret_str, validate=True))
+    except binascii.Error:
+        # Avoid echoing the error message in case it contains sensitive info.
+        raise InputError(
+            "The BTC Markets secret provided is malformed, "
+            "containing invalid or missing characters"
+        )
+    return decoded_secret
 
 class BTCMarkets(ExchangeInterface):  # lgtm[py/missing-call-to-init]
-    # NOTE: the apisecret is provided as a b64 encoded string, needs to be decoded to be valid
     def __init__(
         self,
         name: str,
@@ -169,11 +187,13 @@ class BTCMarkets(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         database: "DBHandler",
         msg_aggregator: MessagesAggregator,
     ):
+        # NOTE: we assume the secret provided has not yet been decoded from its base64 encoding
+        decoded_secret = _decode_bm_secret(secret)
         super().__init__(
             name=name,
             location=Location.BTCMARKETS,
             api_key=api_key,
-            secret=secret,
+            secret=decoded_secret,
             database=database,
         )
         self.base_uri = "https://api.btcmarkets.net"
@@ -193,7 +213,8 @@ class BTCMarkets(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         api_secret: Optional[ApiSecret],
         passphrase: Optional[str],
     ) -> bool:
-        changed = super().edit_exchange_credentials(api_key, api_secret, passphrase)
+        maybe_decoded_secret = api_secret or _decode_bm_secret(api_secret)
+        changed = super().edit_exchange_credentials(api_key, maybe_decoded_secret, passphrase)
         if api_key is not None:
             self.session.headers.update({"BM-AUTH-APIKEY": api_key})
         return changed
