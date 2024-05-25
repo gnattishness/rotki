@@ -34,7 +34,8 @@ def test_interactive_query_balances(
     key = os.environ["BM_API_KEY"]
     secret = base64.b64decode(os.environ["BM_API_SECRET"])
     exchange.edit_exchange_credentials(key, secret, None)
-    result = exchange.query_online_deposits_withdrawals(0, time.time())
+    result = exchange.query_balances(0, time.time())
+    result2 = exchange.query_online_deposits_withdrawals(0, time.time())
     assert False
 
 
