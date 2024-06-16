@@ -16,6 +16,7 @@ from rotkehlchen.exchanges.bitfinex import Bitfinex
 from rotkehlchen.exchanges.bitmex import Bitmex
 from rotkehlchen.exchanges.bitpanda import Bitpanda
 from rotkehlchen.exchanges.bitstamp import Bitstamp
+from rotkehlchen.exchanges.btcmarkets import Btcmarkets
 from rotkehlchen.exchanges.bybit import Bybit
 from rotkehlchen.exchanges.coinbase import Coinbase
 from rotkehlchen.exchanges.coinbasepro import Coinbasepro
@@ -845,6 +846,25 @@ def create_test_bitpanda(
         secret = make_api_secret()
     return Bitpanda(
         name='bitpanda',
+        api_key=api_key,
+        secret=secret,
+        database=database,
+        msg_aggregator=msg_aggregator,
+    )
+
+
+def create_test_btcmarkets(
+        database: DBHandler,
+        msg_aggregator: MessagesAggregator,
+        api_key: ApiKey | None = None,
+        secret: ApiSecret | None = None,
+) -> Btcmarkets:
+    if api_key is None:
+        api_key = make_api_key()
+    if secret is None:
+        secret = make_api_secret()
+    return Btcmarkets(
+        name='btcmarkets',
         api_key=api_key,
         secret=secret,
         database=database,

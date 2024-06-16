@@ -184,6 +184,28 @@ def asset_from_binance(binance_name: str) -> AssetWithOracles:
     ))
 
 
+UNSUPPORTED_BTC_MARKETS_ASSETS = (
+    # 'MCAU', # TODO meld.gold - shows up in balances, add as an asset? If we put it here, it raises errors
+)
+
+# TODO(gnattishness) - needs porting
+def asset_from_btc_markets(bm_name: str) -> Asset:
+    """May raise:
+    - DeserializationError
+    - UnsupportedAsset
+    - UnknownAsset
+    """
+    if not isinstance(bm_name, str):
+        raise DeserializationError(f'Got non-string type {type(bm_name)} for ftx asset')
+
+    #if bm_name in UNSUPPORTED_BTC_MARKETS_ASSETS:
+    #    raise UnsupportedAsset(bm_name)
+
+    # TODO add translation here if needed
+
+    return symbol_to_asset_or_token(bm_name)
+
+
 def asset_from_coinbase(cb_name: str, time: Timestamp | None = None) -> AssetWithOracles:
     """May raise:
     - DeserializationError
