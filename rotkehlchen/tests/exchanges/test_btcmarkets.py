@@ -5,16 +5,19 @@ import base64
 
 import pytest
 
-from rotkehlchen.accounting.structures import Balance
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.constants.assets import A_AUD, A_ETC, A_ETH
-from rotkehlchen.errors import UnknownAsset
-from rotkehlchen.exchanges.data_structures import Location, Trade, TradeType
+from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.exchanges.data_structures import Trade, TradeType
 from rotkehlchen.exchanges.btcmarkets import (
     Btcmarkets,
 )
 from rotkehlchen.assets.converters import asset_from_btc_markets
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.mock import MockResponse
+from rotkehlchen.types import (
+    Location,
+)
 
 import time
 

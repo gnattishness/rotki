@@ -4,7 +4,7 @@ from http import HTTPStatus
 import hmac
 import itertools
 import json
-import logging  # lgtm [py/import-and-import-from]  # https://github.com/github/codeql/issues/6088
+import logging
 import time
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
@@ -13,15 +13,16 @@ import gevent
 import requests
 from typing_extensions import Literal
 
-from rotkehlchen.accounting.structures import Balance
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_btc_markets
-from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.constants.timing import DEFAULT_TIMEOUT_TUPLE, QUERY_RETRY_TIMES
-from rotkehlchen.errors import DeserializationError, RemoteError, UnknownAsset, InputError
+from rotkehlchen.constants import ZERO
+from rotkehlchen.db.settings import CachedSettings
+from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.misc import RemoteError, InputError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import (
     AssetMovement,
-    Location,
     MarginPosition,
     Price,
     Trade,
@@ -37,11 +38,13 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_fee,
     deserialize_int_from_str,
 )
-from rotkehlchen.typing import (
+from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
+    ExchangeAuthCredentials,
     Timestamp,
     TradeType,
+    Location,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 
@@ -50,7 +53,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-MAX_LIMIT_PER_PAGE = 200
+MAX_PAGE_SIZE = 200
 
 
 def _trade_from_btcmarkets(raw_trade: Dict) -> Trade:
@@ -205,18 +208,15 @@ class Btcmarkets(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         )
 
     def first_connection(self) -> None:
+        # TODO check whether api server time is largely out and warn?
         self.first_connection_made = True
 
-    # TODO should this be = None to properly be optional?
-    def edit_exchange_credentials(
-        self,
-        api_key: Optional[ApiKey],
-        api_secret: Optional[ApiSecret],
-        passphrase: Optional[str],
-    ) -> bool:
-        maybe_decoded_secret = api_secret and _decode_bm_secret(api_secret)
-        changed = super().edit_exchange_credentials(api_key, maybe_decoded_secret, passphrase)
-        if api_key is not None:
+    def edit_exchange_credentials(self, credentials: ExchangeAuthCredentials) -> bool:
+        # TODO decode secret first or later? arguably could be done in validation step
+        if credentials.api_secret is not None:
+            credentials.api_secret = _decode_bm_secret(credentials.api_secret)
+        changed = super().edit_exchange_credentials(credentials)
+        if credentials.api_key is not None:
             self.session.headers.update({"BM-AUTH-APIKEY": api_key})
         return changed
 
@@ -224,7 +224,7 @@ class Btcmarkets(ExchangeInterface):  # lgtm[py/missing-call-to-init]
     # TODO typing return? JSON only has "ANY"
     def _api_query(
         self,
-        verb: Literal["GET", "POST", "DELETE"],
+        request_method: Literal["GET", "POST", "DELETE"],
         endpoint: str,
         params: Optional[Dict[str, str]] = None,
         payload: Optional[Dict[str, Any]] = None,
@@ -234,17 +234,20 @@ class Btcmarkets(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         See https://api.btcmarkets.net/doc/v3
         May raise RemoteError
         """
+        # TODO separate error for permission issues
+        # TODO ignore pagination?
         path = f"/{self.api_version}/{endpoint}"
         # TODO ensure that path doesn't start or end with `/`
 
-        tries = QUERY_RETRY_TIMES
+        tries = CachedSettings().get_query_retry_limit()
         while True:
             # does data need to change over retries?
             # TODO
             # I think the message sig doesn't need to change over pagination? not if it's a query parameter
+            # So do signing prior to the retries
             log.debug(
                 "BTC Markets API Query",
-                verb=verb,
+                request_method=request_method,
                 url=path,
                 payload=payload,
                 params=params,
@@ -253,7 +256,7 @@ class Btcmarkets(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             datastr = json.dumps(payload, sort_keys=False) if payload else ""
             # NOTE: path doesn't contain query parameters
             # TODO double check
-            message = "".join((verb, path, timestamp, datastr))
+            message = "".join((request_method, path, timestamp, datastr))
             signature = _sign_bm_message(
                 self.secret,
                 message,
@@ -261,7 +264,7 @@ class Btcmarkets(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             try:
                 # NOTE local request headers are merged with session headers
                 response = self.session.request(
-                    method=verb,
+                    method=request_method,
                     url=self.base_uri + path,
                     data=datastr,
                     params=params,
@@ -269,7 +272,7 @@ class Btcmarkets(ExchangeInterface):  # lgtm[py/missing-call-to-init]
                         "BM-AUTH-TIMESTAMP": timestamp,
                         "BM-AUTH-SIGNATURE": signature,
                     },
-                    timeout=DEFAULT_TIMEOUT_TUPLE,
+                    timeout = CachedSettings().get_timeout_tuple(),
                 )
             except requests.exceptions.RequestException as e:
                 raise RemoteError(
@@ -288,7 +291,7 @@ class Btcmarkets(ExchangeInterface):  # lgtm[py/missing-call-to-init]
 
             if response.status_code == HTTPStatus.TOO_MANY_REQUESTS:
                 if tries >= 1:
-                    backoff_seconds = 10 / tries
+                    backoff_seconds = 10 / tries # TODO jitter
                     log.debug(
                         f"Got a 429 from BTC Markets. Backing off for {backoff_seconds}"
                     )
@@ -317,17 +320,16 @@ class Btcmarkets(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         # NOTE: the least privileged API Key can still read everything, so if it's a valid API Key,
         # it's good enough for us.
         try:
-            _ = self._api_query(verb="GET", endpoint="accounts/me/balances")
-            return True, ""
-
+            _ = self._api_query(request_method="GET", endpoint="accounts/me/balances")
         except RemoteError as e:
             return False, str(e)
+        return True, ""
 
     # TODO protect with lock, cache response?
     def query_balances(self, **kwargs: Any) -> ExchangeQueryBalances:
         assets_balance: Dict[Asset, Balance] = {}
         try:
-            (response, _) = self._api_query(verb="GET", endpoint="accounts/me/balances")
+            (response, _) = self._api_query(request_method="GET", endpoint="accounts/me/balances")
         except RemoteError as e:
             msg = f"BTC Markets request failed. Could not reach the exchange due to {str(e)}"  # noqa: E501
             log.error(msg)
@@ -378,7 +380,7 @@ class Btcmarkets(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         endpoint: str,
         params: Optional[Dict[str, str]] = None,
         payload: Optional[Dict[str, Any]] = None,
-        page_size: int = MAX_LIMIT_PER_PAGE,
+        page_size: int = MAX_PAGE_SIZE,
     ) -> List[Dict[str, Any]]:  # noqa: E501
         """May raise KeyError, RemoteError, ValueError (if provided invalid input).
 
@@ -392,9 +394,9 @@ class Btcmarkets(ExchangeInterface):  # lgtm[py/missing-call-to-init]
         # forward or back directions?
         # TODO "stop_when" callable? evaluated on each result?
         # when would you want to page forward?
-        if page_size > MAX_LIMIT_PER_PAGE:
+        if page_size > MAX_PAGE_SIZE:
             raise ValueError(
-                f'Requested page_size {page_size} greater than MAX_LIMIT_PER_PAGE {MAX_LIMIT_PER_PAGE}'
+                f'Requested page_size {page_size} greater than MAX_LIMIT_PER_PAGE {MAX_PAGE_SIZE}'
             )
         data_pages = []
         # TODO do both before & after get returned?
@@ -411,7 +413,7 @@ class Btcmarkets(ExchangeInterface):  # lgtm[py/missing-call-to-init]
             #     call_params["after"] = last_after
             # Nicer name for ret_data!!
             (ret_data, response) = self._api_query(
-                verb=verb,
+                request_method=verb,
                 endpoint=endpoint,
                 params=call_params,
             )
